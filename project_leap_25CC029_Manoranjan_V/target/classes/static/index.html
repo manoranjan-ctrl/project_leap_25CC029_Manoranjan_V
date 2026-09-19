@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Management</title>
+
+    ```
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            background: #f4f6f8;
+            padding: 40px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: bold;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 16px;
+        }
+
+        button {
+            padding: 10px 18px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 15px;
+            margin-right: 5px;
+        }
+
+        .add-btn {
+            background: #28a745;
+            color: white;
+        }
+
+        .update-btn {
+            background: #007bff;
+            color: white;
+        }
+
+        .delete-btn {
+            background: #dc3545;
+            color: white;
+        }
+
+        .refresh-btn {
+            background: #6c757d;
+            color: white;
+        }
+
+        button:hover {
+            opacity: 0.85;
+        }
+
+        table {
+            width: 100%;
+            margin-top: 30px;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 12px;
+            border: 1px solid #ddd;
+            text-align: center;
+        }
+
+        th {
+            background: #343a40;
+            color: white;
+        }
+
+        .message {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 6px;
+            display: none;
+        }
+    </style>
+    ```
+
+</head>
+
+<body>
+
+<div class="container">
+
+    ```
+    <h1>Student Management</h1>
+
+    <!-- Student Form -->
+    <div class="form-group">
+        <label for="id">Student ID</label>
+        <input type="number" id="id" placeholder="Enter ID">
+    </div>
+
+    <div class="form-group">
+        <label for="name">Student Name</label>
+        <input type="text" id="name" placeholder="Enter Name">
+    </div>
+
+    <button class="add-btn" onclick="addStudent()">Add Student</button>
+    <button class="update-btn" onclick="updateStudent()">Update Student</button>
+    <button class="delete-btn" onclick="deleteStudent()">Delete Student</button>
+    <button class="refresh-btn" onclick="loadStudents()">View Students</button>
+
+    <div id="message" class="message"></div>
+
+    <!-- Student Table -->
+    <table>
+        <thead>
+        <tr>
+            <th>ID</th>
+            <th>Name</th>
+        </tr>
+        </thead>
+
+        <tbody id="studentTable">
+        </tbody>
+    </table>
+    ```
+
+</div>
+
+<script>
+
+    const BASE_URL = "";
+
+    // Show message
+    function showMessage(message, success = true) {
+        const msg = document.getElementById("message");
+
+        msg.innerText = message;
+        msg.style.display = "block";
+        msg.style.background = success ? "#d4edda" : "#f8d7da";
+        msg.style.color = success ? "#155724" : "#721c24";
+    }
+
+
+    // ADD STUDENT
+    async function addStudent() {
+
+        const id = document.getElementById("id").value;
+        const name = document.getElementById("name").value;
+
+        if (!name) {
+            showMessage("Please enter student name", false);
+            return;
+        }
+
+        const student = {
+            id: id ? Number(id) : null,
+            name: name
+        };
+
+        try {
+
+            const response = await fetch(BASE_URL + "/Add", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(student)
+            });
+
+            if (!response.ok) {
+                throw new Error("Failed to add student");
+            }
+
+            const result = await response.json();
+
+            showMessage("Student added successfully");
+
+            document.getElementById("id").value = "";
+            document.getElementById("name").value = "";
+
+            loadStudents();
+
+        } catch (error) {
+            showMessage(error.message, false);
+        }
+    }
+
+
+    // UPDATE STUDENT
+    async function updateStudent() {
+
+        const id = document.getElementById("id").value;
+        const name = document.getElementById("name").value;
+
+        if (!id || !name) {
+            showMessage("Enter both ID and Name", false);
+            return;
+        }
+
+        const student = {
+            id: Number(id),
+            name: name
+        };
+
+        try {
+
+            const response = await fetch(BASE_URL + "/update", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(student)
+            });
+
+            if (!response.ok) {
+                throw new Error("Failed to update student");
+            }
+
+            showMessage("Student updated successfully");
+
+            document.getElementById("id").value = "";
+            document.getElementById("name").value = "";
+
+            loadStudents();
+
+        } catch (error) {
+            showMessage(error.message, false);
+        }
+    }
+
+
+    // DELETE STUDENT
+    async function deleteStudent() {
+
+        const id = document.getElementById("id").value;
+
+        if (!id) {
+            showMessage("Enter Student ID", false);
+            return;
+        }
+
+        try {
+
+            const response = await fetch(
+                BASE_URL + "/delete?id=" + id,
+                {
+                    method: "DELETE"
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error("Failed to delete student");
+            }
+
+            const result = await response.text();
+
+            showMessage(result);
+
+            document.getElementById("id").value = "";
+            document.getElementById("name").value = "";
+
+            loadStudents();
+
+        } catch (error) {
+            showMessage(error.message, false);
+        }
+    }
+
+
+    // GET ALL STUDENTS
+    async function loadStudents() {
+
+        try {
+
+            const response = await fetch(BASE_URL + "/Details");
+
+            if (!response.ok) {
+                throw new Error("Failed to load students");
+            }
+
+            const students = await response.json();
+
+            const table = document.getElementById("studentTable");
+
+            table.innerHTML = "";
+
+            students.forEach(student => {
+
+                const row = document.createElement("tr");
+
+                row.innerHTML = `
+                    <td>${student.id}</td>
+                    <td>${student.name}</td>
+                `;
+
+                table.appendChild(row);
+            });
+
+        } catch (error) {
+
+            showMessage(error.message, false);
+
+        }
+    }
+
+
+    // Load students when page opens
+    window.onload = loadStudents;
+
+</script>
+
+</body>
+</html>
